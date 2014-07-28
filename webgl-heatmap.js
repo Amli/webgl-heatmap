@@ -50,13 +50,25 @@ nukeVendorPrefix = function() {
 textureFloatShims = function() {
   var checkColorBuffer, checkFloatLinear, checkSupport, checkTexture, createSourceCanvas, getExtension, getSupportedExtensions, name, shimExtensions, shimLookup, unshimExtensions, unshimLookup, _i, _len;
   createSourceCanvas = function() {
-    var canvas, ctx, imageData;
+    var canvas, ctx, imageData,
+        buffer = [0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255];
     canvas = document.createElement('canvas');
     canvas.width = 2;
     canvas.height = 2;
     ctx = canvas.getContext('2d');
     imageData = ctx.getImageData(0, 0, 2, 2);
-    imageData.data.set(new Uint8ClampedArray([0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255]));
+    if (imageData.data.set) {
+      imageData.data.set(new Uint8ClampedArray(buffer));
+    } else {
+      var data = imageData.data,
+        len = data.length;
+      for (var i = 0; i < len; i += 4) {
+          data[i] = buffer[i];
+          data[i+1] = buffer[i+1];
+          data[i+2] = buffer[i+2];
+          data[i+3] = buffer[i+3];
+      }
+    }
     ctx.putImageData(imageData, 0, 0);
     return canvas;
   };
@@ -880,16 +892,16 @@ WebGLHeatmap = (function() {
       this.canvas = document.createElement('canvas');
     }
     try {
-      this.gl = this.canvas.getContext('experimental-webgl', {
+      this.gl = this.canvas.getContext('webgl', {
         depth: false,
         antialias: false
       });
-      if (this.gl === null) {
-        this.gl = this.canvas.getContext('webgl', {
+      if (this.gl === null || this.gl === undefined) {
+        this.gl = this.canvas.getContext('experimental-webgl', {
           depth: false,
           antialias: false
         });
-        if (this.gl === null) {
+        if (this.gl === null || this.gl === undefined) {
           throw 'WebGL not supported';
         }
       }
